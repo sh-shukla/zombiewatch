@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zombiewatch-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zombiewatch
+  namespace: zombiewatch-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: zombiewatch
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: zombiewatch
+subjects:
+  - kind: ServiceAccount
+    name: zombiewatch
+    namespace: zombiewatch-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zombiewatch
+  namespace: zombiewatch-system
+  labels:
+    app: zombiewatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zombiewatch
+  template:
+    metadata:
+      labels:
+        app: zombiewatch
+    spec:
+      serviceAccountName: zombiewatch
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: manager
+          image: ghcr.io/sh-shukla/zombiewatch:latest
+          args:
+            - --leader-elect=false
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]

@@ -1,0 +1,39 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: zombiewatch
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - persistentvolumes
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - zombiewatch.sh-shukla.dev
+  resources:
+  - zombiewatches
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - zombiewatch.sh-shukla.dev
+  resources:
+  - zombiewatches/status
+  verbs:
+  - get
+  - patch
+  - update

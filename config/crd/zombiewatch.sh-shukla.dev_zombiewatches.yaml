@@ -1,0 +1,178 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: zombiewatches.zombiewatch.sh-shukla.dev
+spec:
+  group: zombiewatch.sh-shukla.dev
+  names:
+    kind: ZombieWatch
+    listKind: ZombieWatchList
+    plural: zombiewatches
+    shortNames:
+    - zw
+    singular: zombiewatch
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.zombieCount
+      name: Zombies
+      type: integer
+    - jsonPath: .status.lastScanTime
+      name: LastScan
+      type: date
+    - jsonPath: .status.lastNotifyError
+      name: NotifyError
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          ZombieWatch is a cluster-scoped policy: hunt these zombie classes on this
+          cadence, report them to this webhook.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ZombieWatchSpec defines a scan-and-notify policy.
+            properties:
+              checks:
+                description: Checks selects the zombie classes to hunt. An omitted
+                  check is off.
+                properties:
+                  deadNodes:
+                    description: |-
+                      DeadNodes finds nodes that are NotReady long enough that their
+                      workloads have moved on but the node object lingers.
+                    properties:
+                      enabled:
+                        description: Enabled turns this check on.
+                        type: boolean
+                      olderThan:
+                        description: |-
+                          OlderThan is how long a resource must be stuck before it counts as a
+                          zombie. Each check has a sensible default when omitted.
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                  failedPods:
+                    description: FailedPods finds Failed/Evicted pods piling up uncollected.
+                    properties:
+                      enabled:
+                        description: Enabled turns this check on.
+                        type: boolean
+                      olderThan:
+                        description: |-
+                          OlderThan is how long a resource must be stuck before it counts as a
+                          zombie. Each check has a sensible default when omitted.
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                  orphanedPVs:
+                    description: |-
+                      OrphanedPVs finds Released volumes (claim deleted, storage still
+                      provisioned and billed) and long-unbound Available volumes.
+                    properties:
+                      enabled:
+                        description: Enabled turns this check on.
+                        type: boolean
+                      olderThan:
+                        description: |-
+                          OlderThan is how long a resource must be stuck before it counts as a
+                          zombie. Each check has a sensible default when omitted.
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                  terminatingPods:
+                    description: |-
+                      TerminatingPods finds pods stuck in Terminating past their grace period
+                      — almost always a finalizer that will never clear.
+                    properties:
+                      enabled:
+                        description: Enabled turns this check on.
+                        type: boolean
+                      olderThan:
+                        description: |-
+                          OlderThan is how long a resource must be stuck before it counts as a
+                          zombie. Each check has a sensible default when omitted.
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                type: object
+              interval:
+                description: Interval between scans. Defaults to 5m.
+                type: string
+              namespaces:
+                description: Namespaces limits namespaced checks to this list; empty
+                  means all.
+                items:
+                  type: string
+                type: array
+              notify:
+                description: Notify is where findings are delivered.
+                properties:
+                  format:
+                    description: 'Format of the POST body: "generic" structured JSON,
+                      or "slack".'
+                    enum:
+                    - generic
+                    - slack
+                    type: string
+                  resendAfter:
+                    description: |-
+                      ResendAfter re-notifies for a zombie that is still present after this
+                      long. Zero means notify once per zombie per controller lifetime.
+                    type: string
+                  webhookURL:
+                    description: WebhookURL receives reports as JSON POSTs.
+                    pattern: ^https?://
+                    type: string
+                required:
+                - webhookURL
+                type: object
+            required:
+            - notify
+            type: object
+          status:
+            description: ZombieWatchStatus reports the last scan's outcome.
+            properties:
+              lastNotifyError:
+                description: |-
+                  LastNotifyError is empty when the last delivery succeeded. Failures are
+                  kept loud and visible here rather than only in logs.
+                type: string
+              lastNotifyTime:
+                format: date-time
+                type: string
+              lastScanTime:
+                format: date-time
+                type: string
+              zombieCount:
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

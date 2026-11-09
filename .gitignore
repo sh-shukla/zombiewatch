@@ -1,0 +1,5 @@
+bin/
+zombiewatch
+*.test
+coverage.out
+.DS_Store

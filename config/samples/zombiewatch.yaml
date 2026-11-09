@@ -1,0 +1,24 @@
+apiVersion: zombiewatch.sh-shukla.dev/v1alpha1
+kind: ZombieWatch
+metadata:
+  name: default
+spec:
+  interval: 5m
+  # namespaces: [prod, staging]   # empty = all namespaces
+  checks:
+    terminatingPods:
+      enabled: true
+      olderThan: 15m
+    deadNodes:
+      enabled: true
+      olderThan: 10m
+    orphanedPVs:
+      enabled: true
+      olderThan: 1h
+    failedPods:
+      enabled: true
+      olderThan: 24h
+  notify:
+    webhookURL: https://hooks.slack.com/services/XXX/YYY/ZZZ
+    format: slack          # or "generic" for structured JSON
+    resendAfter: 6h        # re-ping while a zombie stays undead
